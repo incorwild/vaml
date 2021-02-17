@@ -1,10 +1,10 @@
 require 'psych'
 require 'yaml'
+require 'hashie/mash'
 require 'vaml/config_handler'
 require 'vaml/version'
 require 'vaml/vault_config'
 require 'vaml/configuration'
-require 'vaml/github'
 require 'vaml/railtie' if defined?(Rails)
 
 module Vaml
@@ -12,7 +12,7 @@ module Vaml
   class << self
     attr_accessor :configuration
 
-    # @param [Hash] options {host: '0.0.0.0:8200', token: ENV["VTOKEN"], organization: ''}
+    # @param [Hash] options {host: '0.0.0.0:8200', token: ENV["VTOKEN"]}
     def configure(options)
       options[:host] ||= 'http://127.0.0.1:8200'
       options[:token] ||= ENV['VAULT_TOKEN']
@@ -27,7 +27,7 @@ module Vaml
     end
 
     def write_string(key, value)
-      write(key, {value: value})
+      write(key, value: value)
     end
 
     def read_string(key)
@@ -38,7 +38,7 @@ module Vaml
       handler = Vaml::ConfigHandler.new
       parser = Psych::Parser.new(handler)
       parser.parse(yml)
-      handler.root.to_ruby.first
+      Hashie::Mash.new handler.root.to_ruby.first
     end
 
     def read(query)
@@ -49,15 +49,10 @@ module Vaml
       end
     end
 
-
     def write(key, value)
       Vault.with_retries(Vault::HTTPConnectionError) do
         Vault.logical.write(key, value)
       end
-    end
-
-    def auth_with_github(token)
-      Vaml::Github.auth(token)
     end
 
     #   policy = <<-EOH

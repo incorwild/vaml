@@ -8,3 +8,4 @@
 /docker/consul-data
 /spec/reports/
 /tmp/
+.idea
